@@ -2,8 +2,11 @@
   "name": "mojito-test",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
-  "dependencies": {},
+  "main": "test.js",
+  "dependencies": {
+    "yuitest": "~0.7.9",
+    "yui": "~3.10.0"
+  },
   "devDependencies": {
     "tap": "~0.4.1"
   },
