@@ -1,5 +1,5 @@
 {
-  "name": "mojito-test",
+  "name": "mojito-cli-test",
   "version": "0.0.1",
   "description": "",
   "main": "test.js",
@@ -22,9 +22,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/yahoo/mojito-test.git"
+    "url": "git://github.com/yahoo/mojito-cli-test.git"
   },
-  "bugs": "https://github.com/yahoo/mojito-test/issues",
+  "bugs": "https://github.com/yahoo/mojito-cli-test/issues",
   "contributors": [
     "Caridy Patino <caridy@gmail.com>",
     "Drew Folta <drew@folta.net>",
