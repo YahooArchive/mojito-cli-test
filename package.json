@@ -37,5 +37,5 @@
     "Scott Shattuck"
   ],
   "license": "BSD",
-  "keywords": []
+  "keywords": ["mojito", "yui", "unit", "test"]
 }
