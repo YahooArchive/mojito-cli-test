@@ -4,8 +4,9 @@
   "description": "",
   "main": "test.js",
   "dependencies": {
-    "yuitest": "~0.7.9",
-    "yui": "~3.10.0"
+    "yui": "~3.10.0",
+    "yuitest-coverage": "~0.0.6",
+    "yuitest": "~0.7.9"
   },
   "devDependencies": {
     "tap": "~0.4.1"
