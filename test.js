@@ -29,8 +29,6 @@ var libpath = require('path'),
     ytcrJar = require.resolve('yuitest-coverage/jar/yuitest-coverage-report.jar'),
 
     ymc = require('./lib/yui-module-configurator'),
-    copyExclude = utils.copyExclude,
-    copyFile = utils.copyFile,
 
     Store, // = require(BASE + 'lib/store'),
 
@@ -38,6 +36,7 @@ var libpath = require('path'),
     RX_TESTS = /-tests$/,
     NO_TTY = !process.stdout.isTTY || !process.stderr.isTTY,
 
+    /* jshint -W079*/// suppress lint "Redefinition of 'YUI'." on next line
     YUI = require('yui').YUI,
     YUITest = require('yuitest').YUITest,
     TestRunner = YUITest.TestRunner,
@@ -51,11 +50,7 @@ var libpath = require('path'),
     collectedCoverage = {},
 
     usage,
-    inputOptions,
-    Y = require('yui').YUI({useSync: true}).use('json-parse', 'json-stringify');
-
-
-Y.applyConfig({useSync: false});
+    inputOptions;
 
 
 /**
@@ -244,30 +239,6 @@ function consoleTestReport(results, allFailures) {
 
 }
 
-/**
- * Perform a shallow merge. Properties on later objects override those on
- * earlier objects.
- * @return {Object} The merged object.
- */
-function merge() {
-    var result = {},
-        prop,
-        o,
-        len = arguments.length,
-        i;
-
-    for (i = 0; i < len; i += 1) {
-        o = arguments[i];
-        for (prop in o) {
-            if (o.hasOwnProperty(prop)) {
-                result[prop] = o[prop];
-            }
-        }
-    }
-
-    return result;
-}
-
 function preProcessor() {
 
     var filepath,
@@ -423,8 +394,8 @@ function executeTestsWithinY(tests, cb) {
         }
     }
 
-    /*jslint unparam:true*/
     function testRunner(Y) {
+        /*jshint unused:false*/
         TestRunner.subscribe(TestRunner.BEGIN_EVENT, handleEvent);
         TestRunner.subscribe(TestRunner.TEST_SUITE_BEGIN_EVENT, handleEvent);
         TestRunner.subscribe(TestRunner.TEST_FAIL_EVENT, handleEvent);
@@ -646,63 +617,6 @@ function runTests(opts) {
 
 }
 
-/*
-function run(params, opts) {
-    var artifactsDir = 'artifacts',
-        testOption = params[0],
-        dir = params[1],
-        testName,
-        stat;
-
-    inputOptions = opts || {};
-
-    if (inputOptions.tmpdir) {
-        if (!existsSync(inputOptions.tmpdir)) {
-            utils.warn('The temporary directory you specified does not exist.' +
-                ' It will be created.');
-            libfs.mkdirSync(inputOptions.tmpdir, MODE_ALL);
-        }
-        mojitoTmp = libpath.join(inputOptions.tmpdir, 'mojitotmp');
-        mojitoInstrumentedDir = libpath.join(inputOptions.tmpdir, 'mojitoinst');
-    }
-
-    if (!existsSync(artifactsDir)) {
-        libfs.mkdirSync(artifactsDir, MODE_ALL);
-    }
-    if (existsSync(resultsDir)) {
-        utils.removeDir(libfs.realpathSync(resultsDir));
-        libfs.rmdirSync(libfs.realpathSync(resultsDir));
-    }
-    libfs.mkdirSync(resultsDir, MODE_ALL);
-
-    if (testOption === 'app' || testOption === 'mojit') {
-        testName = params[2] || '';
-        if (!dir) {
-            utils.error('Please specify ' + testOption + ' directory to test.',
-                usage
-                );
-            return;
-        }
-        try {
-            stat = libfs.statSync(dir);
-            if (!stat.isDirectory()) {
-                utils.error('"' + dir + '" is not a directory.', usage);
-                return;
-            }
-        } catch (err) {
-            utils.error('Invalid directory: \'' + dir + '\'', usage);
-            return;
-        }
-        runTests({path: dir, type: testOption, name: testName});
-    } else {
-        utils.error('Please specify test type "app" or "mojit".', usage);
-        return;
-    }
-}
-*/
-
-// todo: avoid hoisting these vars
-// todo: cleanup flow
 function main(env, cb) {
     var type = env.args.shift() || 'app',
         source = env.args.shift() || '.',
