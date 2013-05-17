@@ -4,9 +4,11 @@
   "description": "",
   "main": "test.js",
   "dependencies": {
+    "mkdirp": "~0.3.5",
     "yui": "~3.10.0",
     "yuitest-coverage": "~0.0.6",
-    "yuitest": "~0.7.9"
+    "yuitest": "~0.7.9",
+    "npmlog": "0.0.2"
   },
   "devDependencies": {
     "tap": "~0.4.1"
