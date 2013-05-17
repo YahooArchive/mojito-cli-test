@@ -4,6 +4,7 @@
  * See the accompanying LICENSE file for terms.
  */
 
+// todo: refactor
 /*jslint anon:true, regexp:true, nomen:true, stupid:true, node:true*/
 'use strict';
 
@@ -655,6 +656,7 @@ function main(env, cb) {
     // dest
     if (existsSync(resultsDir)) {
         utils.removeDir(libfs.realpathSync(dest));
+        libfs.rmdirSync(libfs.realpathSync(dest));
     }
     mkdirp(dest);
 
