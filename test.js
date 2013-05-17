@@ -11,25 +11,28 @@ var libpath = require('path'),
     libfs = require('fs'),
     existsSync = libfs.existsSync || libpath.existsSync,
     exec = require('child_process').exec,
+    os = require('os'),
+
+    mkdirp = require('mkdirp').sync,
+    utils = require('./lib/utils'),
+    log = require('./lib/log'),
 
     // paths
-    BASE = libpath.resolve(__dirname, '../../..') + '/',
-    targetMojitoPath = BASE,
-    mojitoTmp = '/tmp/mojitotmp',
-    mojitoInstrumentedDir = '/tmp/mojito-lib-inst',
-    resultsDir = 'artifacts/test',
-    resultsFile = 'artifacts/test/result.xml',
-    coverageDir = 'artifacts/test/coverage',
-    coverageFile = coverageDir + '/coverage.json',
+    BASE, // = libpath.resolve(__dirname, '../../..') + '/',
+    mojitoTmp, // = '/tmp/mojitotmp',
+    mojitoInstrumentedDir, // = '/tmp/mojito-lib-inst',
+    resultsDir, // = 'artifacts/test',
+    resultsFile, // = 'artifacts/test/result.xml',
+    coverageDir, // = 'artifacts/test/coverage',
+    coverageFile, // = coverageDir + '/coverage.json',
     ytcJar = require.resolve('yuitest-coverage/jar/yuitest-coverage.jar'),
     ytcrJar = require.resolve('yuitest-coverage/jar/yuitest-coverage-report.jar'),
 
-    utils = require(BASE + 'lib/management/utils'),
-    ymc = require(BASE + 'lib/management/yui-module-configurator'),
+    ymc = require('./lib/yui-module-configurator'),
     copyExclude = utils.copyExclude,
     copyFile = utils.copyFile,
 
-    Store = require(BASE + 'lib/store'),
+    Store, // = require(BASE + 'lib/store'),
 
     MODE_ALL = parseInt('777', 8),
     RX_TESTS = /-tests$/,
@@ -237,7 +240,7 @@ function consoleTestReport(results, allFailures) {
     }
     report = report + formatter(percentagePassed + '% pass rate') + '\n';
 
-    utils.log(report);
+    log.info(report);
 
 }
 
@@ -341,7 +344,7 @@ function processResults() {
         mergedJUnitXML += item;
     }
     mergedJUnitXML += '</testsuites>';
-    utils.log('Test Results:\n' + libpath.normalize(resultsFile));
+    log.info('Test Results:\n' + libpath.normalize(resultsFile));
     libfs.writeFileSync(resultsFile, mergedJUnitXML, 'utf8');
 
     consoleTestReport(collectedResults, collectedFailures);
@@ -352,20 +355,20 @@ function processResults() {
     if (inputOptions.coverage) {
         coverageResult = Y.JSON.stringify(collectedCoverage);
         libfs.writeFileSync(coverageFile, coverageResult, 'utf8');
-        utils.log('Creating coverage report...');
+        log.info('Creating coverage report...');
         // generate coverage reports in html
         exec(['java -jar', ytcrJar, '--format LCOV -o', coverageDir,
             coverageFile].join(' '),
             function(error, stdout, stderr) {
                 if (inputOptions.verbose) {
-                    utils.log('stdout: ' + stdout);
-                    utils.log('stderr: ' + stderr);
+                    log.info('stdout: ' + stdout);
+                    log.info('stderr: ' + stderr);
                 }
                 if (error !== null) {
-                    utils.error('exec error: ' + error);
+                    log.error('exec error: ' + error);
                     process.exit(2);
                 } else {
-                    utils.log('Test Coverage Report:\n' +
+                    log.info('Test Coverage Report:\n' +
                         libpath.normalize(coverageDir +
                             '/lcov-report/index.html')
                              );
@@ -447,7 +450,7 @@ function executeTestsWithinY(tests, cb) {
 }
 
 function instrumentDirectory(from, verbose, testType, callback) {
-    utils.log('Instrumenting "' + from +
+    log.info('Instrumenting "' + from +
         '" for test coverage\n\t(this will take a while).');
     var opts = verbose ? ' -v' : '',
         realPathFrom = libfs.realpathSync(from),
@@ -460,7 +463,7 @@ function instrumentDirectory(from, verbose, testType, callback) {
     utils.removeDir(mojitoInstrumentedDir);
 
     if (verbose) {
-        utils.log('copying ' + realPathFrom + ' to ' + mojitoTmp);
+        log.info('copying ' + realPathFrom + ' to ' + mojitoTmp);
     }
 
     if (testType === 'app') { //copy everything to instrumented dir first
@@ -495,23 +498,23 @@ function instrumentDirectory(from, verbose, testType, callback) {
     utils.copyUsingMatcher(realPathFrom, mojitoTmp, instrumentableJsMatcher);
 
     if (verbose) {
-        utils.log(cmd);
+        log.info(cmd);
     }
 
     exec(cmd, function(error, stdout, stderr) {
         if (verbose) {
-            utils.log('coverage instrumentation finished for ' +
+            log.info('coverage instrumentation finished for ' +
                 mojitoInstrumentedDir);
         }
         if (verbose) {
-            utils.log('stdout: ' + stdout);
-            utils.log('stderr: ' + stderr);
+            log.info('stdout: ' + stdout);
+            log.info('stderr: ' + stderr);
         }
         if (error !== null) {
-            utils.warn('exec error: ' + error);
+            log.warn('exec error: ' + error);
         } else {
             if (verbose) {
-                utils.log('Copy other files for testing');
+                log.info('Copy other files for testing');
             }
             callback();
         }
@@ -593,7 +596,7 @@ function runTests(opts) {
         });
 
         if (!testModuleNames.length) {
-            utils.error('No ' + testType + ' tests to run in ' + path +
+            log.error('No ' + testType + ' tests to run in ' + path +
                 ' with test name \'' + testName + '\'', null, true);
         }
 
@@ -643,7 +646,7 @@ function runTests(opts) {
 
 }
 
-
+/*
 function run(params, opts) {
     var artifactsDir = 'artifacts',
         testOption = params[0],
@@ -696,8 +699,75 @@ function run(params, opts) {
         return;
     }
 }
+*/
 
+// todo: avoid hoisting these vars
+// todo: cleanup flow
+function main(env, cb) {
+    var type = env.args.shift() || 'app',
+        source = env.args.shift() || '.',
+        dest = env.opts.directory || 'artifacts/test',
+        name = env.args.shift() || '',
+        temp = env.opts.tmpdir || os.tmpdir(); // only for coverage
+
+    if (!env.app) {
+        cb('Must run in an application directory.');
+        return;
+    }
+
+    if (!env.mojito) {
+        cb('Mojito must be installed locally. Please try `npm i mojito`');
+        return;
+    }
+
+    if (('app' !== type) && ('mojit' !== type)) {
+        cb('Invalid test type ' + type);
+        return;
+    }
+
+    // source
+    if ('mojit' === type.toLowerCase()) {
+        source = utils.findInPaths(['mojits', '.'], source);
+        if (!source) {
+            cb('Could not find mojit.');
+            return;
+        }
+    }
+    if (!source || !existsSync(source)) {
+        cb('Invalid source directory.');
+        return;
+    }
+
+    // dest
+    if (existsSync(resultsDir)) {
+        utils.removeDir(libfs.realpathSync(dest));
+    }
+    mkdirp(dest);
+
+    // todo: don't do this
+    BASE = env.mojito.path;
+    mojitoTmp = libpath.resolve(temp, 'mojitotmp');
+    mojitoInstrumentedDir = libpath.resolve(temp, 'mojitoinst');
+    resultsDir = dest;
+    resultsFile = libpath.join(dest, 'result.xml');
+    coverageDir = libpath.join(dest, 'coverage'),
+    coverageFile = libpath.join(coverageDir, 'coverage.json'),
+    Store = require(env.mojito.path + '/lib/store'),
+    inputOptions = env.opts;
+
+
+    log.debug('Type:', type);
+    log.debug('Source:', source);
+    log.debug('Dest:', dest);
+    log.debug('Temp:', temp);
+
+    runTests({
+        name: name,
+        type: type,
+        path: source
+    });
 }
+
 /**
  * Add ability to skip tests without breaking.
  */
@@ -705,7 +775,7 @@ YUITest.Assert.skip = function() {
     YUITest.Assert._increment();
 };
 
-module.exports.main;
+module.exports = main;
 
 module.exports.usage = usage = [
     'Usage: mojito test [options] [type] [path]',
