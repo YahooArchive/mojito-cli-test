@@ -54,18 +54,6 @@ var libpath = require('path'),
 
 Y.applyConfig({useSync: false});
 
-// OSX's /tmp directory is a symbolic link to /private/tmp, and we want to use
-// the real directory string
-try {
-    if (libfs.statSync('/private/tmp').isDirectory()) {
-        mojitoTmp = '/private' + mojitoTmp;
-        mojitoInstrumentedDir = '/private' + mojitoInstrumentedDir;
-    }
-} catch (err) {
-    // if there is no /private/tmp directory, no worries, the default /tmp must
-    // be a real directory
-}
-
 
 /**
  * Collects the failure, for use later by processResults().
@@ -83,7 +71,6 @@ function collectFailure(suiteName, event) {
         stack: event.error.stack
     });
 }
-
 
 /**
  * Collects the results of each run, for use later by processResults().
@@ -123,7 +110,6 @@ function configureYUI(YUI, store) {
     YUI.applyConfig(config);
 }
 
-
 function colorFactory(code) {
     function color(code, string) {
         return '\u001b[' + code + 'm' + string + '\u001b[0m';
@@ -132,7 +118,6 @@ function colorFactory(code) {
         return NO_TTY ? string : color(code, string);
     };
 }
-
 
 /**
  * Pretty-prints the results to the console.
@@ -280,7 +265,6 @@ function merge() {
     return result;
 }
 
-
 function preProcessor() {
 
     var filepath,
@@ -330,7 +314,6 @@ function preProcessor() {
         }
     }
 }
-
 
 /**
  * Merges results of the multiple runs.
@@ -400,8 +383,6 @@ function processResults() {
 
 }
 
-
-
 function executeTestsWithinY(tests, cb) {
 
     var YUIInst,
@@ -464,7 +445,6 @@ function executeTestsWithinY(tests, cb) {
 
     YUIInst.use.apply(YUIInst, tests);
 }
-
 
 function instrumentDirectory(from, verbose, testType, callback) {
     utils.log('Instrumenting "' + from +
@@ -537,7 +517,6 @@ function instrumentDirectory(from, verbose, testType, callback) {
         }
     });
 }
-
 
 function runTests(opts) {
 
@@ -717,16 +696,7 @@ function run(params, opts) {
         return;
     }
 }
-function setForTest(opts) {
-    inputOptions = opts;
-}
 
-function getForTest() {
-    var testresult = {
-        collectedFailures: collectedFailures,
-        collectedResults: collectedResults
-    };
-    return testresult;
 }
 /**
  * Add ability to skip tests without breaking.
@@ -735,42 +705,23 @@ YUITest.Assert.skip = function() {
     YUITest.Assert._increment();
 };
 
+module.exports.main;
 
-exports.run = run;
-
-exports.usage = usage = [
+module.exports.usage = usage = [
+    'Usage: mojito test [options] [type] [path]',
     'Options: -c --coverage  Instruments code under test and prints coverage report',
     '         -v --verbose   Verbose logging',
-    'To test a mojit:',
-    '    mojito test mojit ./path/to/mojit/directory',
-    'To test a Mojito app:',
-    '    mojito test app ./path/to/mojito/app/directory'].join('\n');
+    '         -t --tempdir   Specify the temporary directory to use for coverage',
+    'Examples:',
+    '  To test a mojit:',
+    '    mojito test mojit ./path/to/mojit',
+    '  To test a Mojito app:',
+    '    mojito test app .',
+    ''
+].join('\n');
 
-exports.options = [
-    {
-        longName: 'coverage',
-        shortName: 'c',
-        hasValue: false
-    },
-    {
-        longName: 'verbose',
-        shortName: 'v',
-        hasValue: false
-    },
-    {
-        longName: 'tmpdir',
-        shortName: 't',
-        hasValue: true
-    }
+module.exports.options = [
+    {shortName: 'c', hasValue: false, longName: 'coverage'},
+    {shortName: 't', hasValue: true,  longName: 'tmpdir'},
+    {shortName: 'v', hasValue: false, longName: 'verbose'}
 ];
-
-exports.test = {
-    collectFailure: collectFailure,
-    collectRunResults: collectRunResults,
-    colorFactory: colorFactory,
-    preProcessor: preProcessor,
-    consoleTestReport: consoleTestReport,
-    merge: merge,
-    setForTest: setForTest,
-    getForTest: getForTest
-};
