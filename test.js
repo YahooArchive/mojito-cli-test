@@ -15,6 +15,7 @@ var libpath = require('path'),
     os = require('os'),
 
     mkdirp = require('mkdirp').sync,
+    rimraf = require('rimraf').sync,
     utils = require('./lib/utils'),
     log = require('./lib/log'),
 
@@ -92,8 +93,8 @@ function collectRunResults(results) {
             json = JSON.parse(str);
         } catch (e) {
             // not expected to happen very often, so no effort to make it pretty
-            console.log('------ERROR------');
-            console.log(e);
+            log.error('------ERROR------');
+            log.error(e);
         }
         for (file in json) {
             if (json.hasOwnProperty(file)) {
@@ -180,9 +181,8 @@ function consoleTestReport(results, allFailures) {
     }
 
     function printTestSuiteResults(suite) {
-        if (inputOptions.verbose) {
-            console.log('suite: ' + suite.name);
-        }
+        log.debug('suite: ' + suite.name);
+
         var caseName,
             testThing;
         testSuiteResults[suite.name] = suite;
@@ -270,8 +270,8 @@ function preProcessor() {
             }
         }
 
-        libfs.rmdirSync(resultsDir);
-        utils.removeDir();
+        rimraf(resultsDir);
+
     } catch (err2) {  // ignore
     }
 
@@ -332,23 +332,19 @@ function processResults() {
         exec(['java -jar', ytcrJar, '--format LCOV -o', coverageDir,
             coverageFile].join(' '),
             function(error, stdout, stderr) {
-                if (inputOptions.verbose) {
-                    log.info('stdout: ' + stdout);
-                    log.info('stderr: ' + stderr);
-                }
+                log.debug('stdout: ' + stdout);
+                log.debug('stderr: ' + stderr);
+
                 if (error !== null) {
                     log.error('exec error: ' + error);
                     process.exit(2);
                 } else {
                     log.info('Test Coverage Report:\n' +
                         libpath.normalize(coverageDir +
-                            '/lcov-report/index.html')
-                             );
+                            '/lcov-report/index.html'));
                     // clear the old coverage reports
-                    utils.removeDir(libfs.realpathSync(mojitoTmp));
-                    libfs.rmdirSync(libfs.realpathSync(mojitoTmp));
-                    utils.removeDir(libfs.realpathSync(mojitoInstrumentedDir));
-                    libfs.rmdirSync(libfs.realpathSync(mojitoInstrumentedDir));
+                    rimraf(mojitoTmp);
+                    rimraf(mojitoInstrumentedDir);
                     process.exit(exitCode);
                 }
             });
@@ -422,8 +418,8 @@ function executeTestsWithinY(tests, cb) {
 }
 
 function instrumentDirectory(from, verbose, testType, callback) {
-    log.info('Instrumenting "' + from +
-        '" for test coverage\n\t(this will take a while).');
+    log.info('Instrumenting "' + from + '" for test coverage\n\t(this will take a while).');
+
     var opts = verbose ? ' -v' : '',
         realPathFrom = libfs.realpathSync(from),
         cmd = 'java -jar ' + ytcJar + ' ' + opts +
@@ -431,12 +427,10 @@ function instrumentDirectory(from, verbose, testType, callback) {
         allMatcher,
         instrumentableJsMatcher;
 
-    utils.removeDir(mojitoTmp);
-    utils.removeDir(mojitoInstrumentedDir);
+    rimraf(mojitoTmp);
+    rimraf(mojitoInstrumentedDir);
 
-    if (verbose) {
-        log.info('copying ' + realPathFrom + ' to ' + mojitoTmp);
-    }
+    log.debug('copying ' + realPathFrom + ' to ' + mojitoTmp);
 
     if (testType === 'app') { //copy everything to instrumented dir first
         allMatcher = utils.getExclusionMatcher([
@@ -469,25 +463,17 @@ function instrumentDirectory(from, verbose, testType, callback) {
 
     utils.copyUsingMatcher(realPathFrom, mojitoTmp, instrumentableJsMatcher);
 
-    if (verbose) {
-        log.info(cmd);
-    }
+    log.debug(cmd);
 
     exec(cmd, function(error, stdout, stderr) {
-        if (verbose) {
-            log.info('coverage instrumentation finished for ' +
-                mojitoInstrumentedDir);
-        }
-        if (verbose) {
-            log.info('stdout: ' + stdout);
-            log.info('stderr: ' + stderr);
-        }
+        log.debug('coverage instrumentation finished for ' + mojitoInstrumentedDir);
+        log.debug('stdout: ' + stdout);
+        log.debug('stderr: ' + stderr);
+
         if (error !== null) {
             log.warn('exec error: ' + error);
         } else {
-            if (verbose) {
-                log.info('Copy other files for testing');
-            }
+            log.debug('Copy other files for testing');
             callback();
         }
     });
@@ -625,6 +611,15 @@ function main(env, cb) {
         name = env.args.shift() || '',
         temp = env.opts.tmpdir || os.tmpdir(); // only for coverage
 
+    if (env.opts.verbose && !env.opts.loglevel) { // BC
+        env.opts.loglevel = 'debug';
+    }
+
+    if (env.opts.loglevel) {
+        log.level = env.opts.loglevel;
+        log.silly('logging level set to', env.opts.loglevel);
+    }
+
     if (!env.app) {
         cb('Must run in an application directory.');
         return;
@@ -654,9 +649,8 @@ function main(env, cb) {
     }
 
     // dest
-    if (existsSync(resultsDir)) {
-        utils.removeDir(libfs.realpathSync(dest));
-        libfs.rmdirSync(libfs.realpathSync(dest));
+    if (existsSync(dest)) {
+        rimraf(dest);
     }
     mkdirp(dest);
 
@@ -668,17 +662,18 @@ function main(env, cb) {
     resultsFile = libpath.join(dest, 'result.xml');
     coverageDir = libpath.join(dest, 'coverage');
     coverageFile = libpath.join(coverageDir, 'coverage.json');
+
     Store = require(libpath.join(env.mojito.path, 'lib/store'));
     inputOptions = env.opts;
 
-
-    log.debug('Type:', type);
-    log.debug('Source:', source);
-    log.debug('Dest:', dest);
-    log.debug('Temp:', temp);
+    log.debug('type:', type);
+    log.debug('name:', name);
+    log.debug('source:', source);
+    log.debug('dest:', dest);
+    log.debug('temp:', temp);
 
     runTests({
-        name: name,
+        name: '', //name,
         type: type,
         path: source
     });
