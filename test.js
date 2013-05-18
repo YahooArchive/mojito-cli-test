@@ -89,7 +89,7 @@ function collectRunResults(results) {
     if (inputOptions.coverage) {
         str = TestRunner.getCoverage(YUITest.CoverageFormat.JSON);
         try {
-            json = Y.JSON.parse(str);
+            json = JSON.parse(str);
         } catch (e) {
             // not expected to happen very often, so no effort to make it pretty
             console.log('------ERROR------');
@@ -325,7 +325,7 @@ function processResults() {
     }
 
     if (inputOptions.coverage) {
-        coverageResult = Y.JSON.stringify(collectedCoverage);
+        coverageResult = JSON.stringify(collectedCoverage);
         libfs.writeFileSync(coverageFile, coverageResult, 'utf8');
         log.info('Creating coverage report...');
         // generate coverage reports in html
@@ -521,11 +521,11 @@ function runTests(opts) {
                 testConfigs[k] = sourceConfigs[k];
             });
             testConfigs['mojito-test'] = {
-                fullpath: BASE + 'lib/app/autoload/mojito-test.common.js',
+                fullpath: libpath.join(BASE, 'lib/app/autoload/mojito-test.common.js'),
                 requires: ['mojito']
             };
             testConfigs.mojito = {
-                fullpath: BASE + 'lib/app/autoload/mojito.common.js'
+                fullpath: libpath.join(BASE, 'lib/app/autoload/mojito.common.js')
             };
             YUI.applyConfig({
                 modules: testConfigs
@@ -666,9 +666,9 @@ function main(env, cb) {
     mojitoInstrumentedDir = libpath.resolve(temp, 'mojitoinst');
     resultsDir = dest;
     resultsFile = libpath.join(dest, 'result.xml');
-    coverageDir = libpath.join(dest, 'coverage'),
-    coverageFile = libpath.join(coverageDir, 'coverage.json'),
-    Store = require(env.mojito.path + '/lib/store'),
+    coverageDir = libpath.join(dest, 'coverage');
+    coverageFile = libpath.join(coverageDir, 'coverage.json');
+    Store = require(libpath.join(env.mojito.path, 'lib/store'));
     inputOptions = env.opts;
 
 
