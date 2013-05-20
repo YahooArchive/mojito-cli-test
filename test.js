@@ -608,7 +608,7 @@ function main(env, cb) {
     var type = env.args.shift() || 'app',
         source = env.args.shift() || '.',
         dest = env.opts.directory || 'artifacts/test',
-        name = env.args.shift() || '',
+        testnames = env.args.shift() || '', // comma seperated test names
         temp = env.opts.tmpdir || os.tmpdir(); // only for coverage
 
     if (env.opts.verbose && !env.opts.loglevel) { // BC
@@ -667,13 +667,13 @@ function main(env, cb) {
     inputOptions = env.opts;
 
     log.debug('type:', type);
-    log.debug('name:', name);
+    log.debug('testnames:', testnames);
     log.debug('source:', source);
     log.debug('dest:', dest);
     log.debug('temp:', temp);
 
     runTests({
-        name: '', //name,
+        name: testnames,
         type: type,
         path: source
     });
