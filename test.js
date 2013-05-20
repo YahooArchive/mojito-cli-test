@@ -690,9 +690,12 @@ module.exports = main;
 
 module.exports.usage = usage = [
     'Usage: mojito test [options] [type] [path]',
-    'Options: -c --coverage  Instruments code under test and prints coverage report',
-    '         -v --verbose   Verbose logging',
-    '         -t --tempdir   Specify the temporary directory to use for coverage',
+    'Options:',
+    '  -d --directory Specify a destination directory besides "artifacts/test"',
+    '  -c --coverage  Instruments code under test and prints coverage report',
+    '  -v --verbose   Verbose logging',
+    '     --debug     Same as --versbose',
+    '  -t --tempdir   Specify the temporary directory to use for coverage',
     'Examples:',
     '  To test a mojit:',
     '    mojito test mojit ./path/to/mojit',
@@ -703,6 +706,7 @@ module.exports.usage = usage = [
 
 module.exports.options = [
     {shortName: 'c', hasValue: false, longName: 'coverage'},
+    {shortName: 'd', hasValue: true,  longName: 'directory'},
     {shortName: 't', hasValue: true,  longName: 'tmpdir'},
     {shortName: 'v', hasValue: false, longName: 'verbose'}
 ];
