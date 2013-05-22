@@ -437,12 +437,11 @@ function instrumentDirectory(from, verbose, testType, callback) {
     });
 }
 
-function runTests(opts) {
+function runTests(opts, cb) {
 
     var i,
         ttn,
-        targetTests,
-        testName = opts.name,
+        targetTests = opts.testlist,
         testType = opts.type || 'app',
         path = libpath.resolve(opts.path),
         coverage = inputOptions.coverage,
@@ -488,16 +487,10 @@ function runTests(opts) {
             }
         }
 
-        // allowing multiple test names to be given
-        if (testName) {
-            targetTests = testName.indexOf(',') > 0 ?
-                    testName.split(',') :
-                    [testName];
-        }
 
         Object.keys(testConfigs).forEach(function(name) {
             // if a test name filter is in effect, only run matching tests
-            if (testName) {
+            if (targetTests.length) {
 
                 for (i = 0; i < targetTests.length; i += 1) {
                     ttn = targetTests[i];
@@ -512,8 +505,7 @@ function runTests(opts) {
         });
 
         if (!testModuleNames.length) {
-            log.error('No ' + testType + ' tests to run in ' + path +
-                ' with test name \'' + testName + '\'', null, true);
+            cb('No ' + testType + ' tests found in ' + path);
         }
 
         global.YUITest = YUITest;
@@ -564,10 +556,15 @@ function runTests(opts) {
 
 function main(env, cb) {
     var type = env.args.shift() || 'app',
-        source = env.args.shift() || '.',
         dest = env.opts.directory || 'artifacts/test',
-        testnames = env.args.shift() || '', // comma seperated test names
-        temp = env.opts.tmpdir || os.tmpdir(); // only for coverage
+        temp = env.opts.tmpdir || os.tmpdir(), // only used for coverage
+        list = env.opts.testname, // array of optional test module names
+        source = env.args.shift() || '.';
+
+    if (!list) {
+        // BC 3rd arg was comma separated list of test module names
+        list = env.args.length ? env.args.shift().split(',') : [];
+    }
 
     if (env.opts.verbose && !env.opts.loglevel) { // BC
         env.opts.loglevel = 'debug';
@@ -625,16 +622,16 @@ function main(env, cb) {
     inputOptions = env.opts;
 
     log.debug('type:', type);
-    log.debug('testnames:', testnames);
+    log.debug('test module list:', list);
     log.debug('source:', source);
     log.debug('dest:', dest);
     log.debug('temp:', temp);
 
     runTests({
-        name: testnames,
+        testlist: list,
         type: type,
         path: source
-    });
+    }, cb);
 }
 
 /**
@@ -665,6 +662,7 @@ module.exports.usage = usage = [
 module.exports.options = [
     {shortName: 'c', hasValue: false, longName: 'coverage'},
     {shortName: 'd', hasValue: true,  longName: 'directory'},
-    {shortName: 't', hasValue: true,  longName: 'tmpdir'},
+    {shortName: null, hasValue: true, longName: 'tmpdir'},
+    {shortName: 't', hasValue: [String, Array], longName: 'testname'},
     {shortName: 'v', hasValue: false, longName: 'verbose'}
 ];
