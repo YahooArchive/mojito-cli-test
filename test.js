@@ -241,53 +241,10 @@ function consoleTestReport(results, allFailures) {
 }
 
 function preProcessor() {
-
-    var filepath,
-        fstat,
-        files,
-        i;
-
-    try {
-        files = libfs.readdirSync(coverageDir);
-        for (i = 0; i < files.length; i += 1) {
-            filepath = coverageDir + '/' + files[i];
-            fstat = libfs.statSync(filepath);
-            if (fstat.isFile()) {
-                libfs.unlinkSync(filepath);
-            }
-        }
-        libfs.rmdirSync(coverageDir);
-    } catch (err1) {  // ignore
-    }
-
-    try {
-        files = libfs.readdirSync(resultsDir);
-        for (i = 0; i < files.length; i += 1) {
-            filepath = resultsDir + '/' + files[i];
-            fstat = libfs.statSync(filepath);
-            if (fstat.isFile()) {
-                libfs.unlinkSync(filepath);
-            }
-        }
-
-        rimraf(resultsDir);
-
-    } catch (err2) {  // ignore
-    }
-
-    try {
-        libfs.mkdirSync(resultsDir, MODE_ALL);
-    } catch (err3) {
-        console.log('Couldn\'t create results dir: ' + err3);
-    }
-
-    if (inputOptions.coverage) {
-        try {
-            libfs.mkdirSync(coverageDir, MODE_ALL);
-        } catch (err4) {
-            console.log('Couldn\'t create results coverage dir: ' + err4);
-        }
-    }
+    rimraf(coverageDir);
+    mkdirp(coverageDir);
+    rimraf(resultsDir);
+    mkdirp(resultsDir);
 }
 
 /**
