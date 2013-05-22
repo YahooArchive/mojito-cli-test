@@ -6,22 +6,30 @@ This package provides the `test` command for the [`mojito-cli`](https://github.c
 Usage
 -----
 
-The `test` command uses [yuitest](https://github.com/yui/yuitest) to run tests in files ending in "-tests.js".
+The `test` command uses [yuitest](https://github.com/yui/yuitest) to run unit tests in files ending in `-tests.js`.
 
-The command should be invoked at the top directory level of your mojito application, and have mojito installed locally in node_modules.
+The command should be invoked at the top directory level of your mojito application, which should also have mojito [installed locally](https://github.com/yahoo/mojito-cli/wiki/NpmInstallation).
+
+    mojito test [options] <app|mojit> [path]
+
+Examples:
 
     % cd path/to/mojito/app
     % mojito test app
 
 To run just a mojit's tests,
 
-    % mojito test mojit mojits/MojitName
+    % mojito test mojit path/to/mojit
 
 or
 
     % mojito test mojit MojitName
 
 By default, the test results are displayed on stdout, and saved in a JUnitXML-formatted file at `artifacts/test/result.xml`. To specify a different destination, see below.
+
+A particular test-module (i.e. the YUI module name) can be specified as the last argument. Multiple module names can be separated with commas. For example:
+
+    % mojito test app --test modelA-tests --test moduleB-tests
 
 ### Options
 
