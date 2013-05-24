@@ -1,8 +1,8 @@
 mojito-cli-test
-==========
+===============
 
 This package provides the `test` command for the [`mojito-cli`](https://github.com/yahoo/mojito-cli) tool. 
-Install them together with the following: `npm install -g mojito-cli`
+Install `mojito-cli` and `mojito-cli-test` with the following: `npm install -g mojito-cli`
 
 Usage
 -----
