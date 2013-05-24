@@ -2,7 +2,7 @@ mojito-cli-test
 ==========
 
 This package provides the `test` command for the [`mojito-cli`](https://github.com/yahoo/mojito-cli) tool. 
-Install them together with: `npm install -g mojito-cli`
+Install them together with the following: `npm install -g mojito-cli`
 
 Usage
 -----
@@ -19,11 +19,11 @@ Examples:
     $ cd path/to/mojito/app
     $ mojito test app
 
-To run just a mojit's tests,
+To run just a mojit's tests:
 
     $ mojito test mojit path/to/mojit
 
-or
+or:
 
     $ mojito test mojit MojitName
 
