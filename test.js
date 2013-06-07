@@ -5,12 +5,11 @@
  */
 
 // todo: refactor
-/*jslint anon:true, regexp:true, nomen:true, stupid:true, node:true*/
 'use strict';
 
 var libpath = require('path'),
     libfs = require('fs'),
-    existsSync = libfs.existsSync || libpath.existsSync,
+    existsSync = libfs.existsSync,
     exec = require('child_process').exec,
     os = require('os'),
 
@@ -34,7 +33,6 @@ var libpath = require('path'),
 
     Store, // = require(BASE + 'lib/store'),
 
-    MODE_ALL = parseInt('777', 8),
     RX_TESTS = /-tests$/,
     NO_TTY = !process.stdout.isTTY || !process.stderr.isTTY,
 
@@ -43,14 +41,12 @@ var libpath = require('path'),
     YUITest = require('yuitest').YUITest,
     TestRunner = YUITest.TestRunner,
 
-    // for asynch testing
-    testQueue = [],
-
     collectedFailures = [],
     collectedResults = [],
     collectedJUnitXML = [],
     collectedCoverage = {},
 
+    callback,
     usage,
     inputOptions;
 
@@ -80,22 +76,14 @@ function collectFailure(suiteName, event) {
  * @param {Object} results The results of the test run.
  */
 function collectRunResults(results) {
-    var str,
-        json,
+    var json,
         file;
 
     collectedResults.push(results);
     collectedJUnitXML.push(TestRunner.getResults(YUITest.TestFormat.JUnitXML));
 
     if (inputOptions.coverage) {
-        str = TestRunner.getCoverage(YUITest.CoverageFormat.JSON);
-        try {
-            json = JSON.parse(str);
-        } catch (e) {
-            // not expected to happen very often, so no effort to make it pretty
-            log.error('------ERROR------');
-            log.error(e);
-        }
+        json = JSON.parse(TestRunner.getCoverage(YUITest.CoverageFormat.JSON));
         for (file in json) {
             if (json.hasOwnProperty(file)) {
                 collectedCoverage[file] = json[file];
@@ -108,6 +96,11 @@ function configureYUI(YUI, store) {
     var config = store.yui.getModulesConfig('server');
     config.useSync = true;
     YUI.applyConfig(config);
+}
+
+function getTmpDir() {
+    // BC - os.tmpdir not implemented in SD's node 0.8 env?
+    return os.tmpdir ? os.tmpdir() : '/tmp';
 }
 
 function colorFactory(code) {
@@ -236,8 +229,7 @@ function consoleTestReport(results, allFailures) {
     }
     report = report + formatter(percentagePassed + '% pass rate') + '\n';
 
-    log.info(report);
-
+    console.log(report);
 }
 
 function preProcessor() {
@@ -256,10 +248,7 @@ function processResults() {
     var i,
         item,
         mergedJUnitXML,
-        coverageResult,
-        exitCode = 0;
-
-    console.log();
+        coverageResult;
 
     // merge JUnit XML
     mergedJUnitXML = '<?xml version="1.0" encoding="UTF-8"?><testsuites>';
@@ -277,11 +266,17 @@ function processResults() {
     libfs.writeFileSync(resultsFile, mergedJUnitXML, 'utf8');
 
     consoleTestReport(collectedResults, collectedFailures);
-    if (collectedFailures.length) {
-        exitCode = 1;
+
+    function exit(code) {
+        if (code) {
+            callback('Failed.', null);
+        } else {
+            callback(null, 'Passed.');
+        }
     }
 
     if (inputOptions.coverage) {
+        mkdirp(coverageDir);
         coverageResult = JSON.stringify(collectedCoverage);
         libfs.writeFileSync(coverageFile, coverageResult, 'utf8');
         log.info('Creating coverage report...');
@@ -294,7 +289,8 @@ function processResults() {
 
                 if (error !== null) {
                     log.error('exec error: ' + error);
-                    process.exit(2);
+                    // was process.exit(2);
+                    callback('Failed processing coverage report');
                 } else {
                     log.info('Test Coverage Report:\n' +
                         libpath.normalize(coverageDir +
@@ -302,16 +298,15 @@ function processResults() {
                     // clear the old coverage reports
                     rimraf(mojitoTmp);
                     rimraf(mojitoInstrumentedDir);
-                    process.exit(exitCode);
+                    exit(collectedFailures.length);
                 }
             });
     } else {
-        process.exit(exitCode);
+        exit(collectedFailures.length);
     }
-
 }
 
-function executeTestsWithinY(tests, cb) {
+function executeTestsWithinY(tests) {
 
     var YUIInst,
         suiteName = '';
@@ -338,12 +333,7 @@ function executeTestsWithinY(tests, cb) {
             TestRunner.unsubscribe(TestRunner.COMPLETE_EVENT, handleEvent);
 
             collectRunResults(event.results);
-
-            if (cb) {
-                cb();
-            } else {
-                processResults();
-            }
+            processResults();
             break;
         }
     }
@@ -374,7 +364,7 @@ function executeTestsWithinY(tests, cb) {
     YUIInst.use.apply(YUIInst, tests);
 }
 
-function instrumentDirectory(from, verbose, testType, callback) {
+function instrumentDirectory(from, verbose, testType, cb) {
     log.info('Instrumenting "' + from + '" for test coverage\n\t(this will take a while).');
 
     var opts = verbose ? ' -v' : '',
@@ -432,24 +422,22 @@ function instrumentDirectory(from, verbose, testType, callback) {
             log.warn('exec error: ' + error);
         } else {
             log.debug('Copy other files for testing');
-            callback();
+            cb();
         }
     });
 }
 
-function runTests(opts, cb) {
+function runTests(opts) {
 
     var i,
         ttn,
         targetTests = opts.testlist,
-        testType = opts.type || 'app',
+        testType = opts.type,
         path = libpath.resolve(opts.path),
         coverage = inputOptions.coverage,
         verbose = inputOptions.verbose,
         store,
         testRunner,
-        runNext,
-
         testModuleNames = ['mojito', 'mojito-test'];
 
     testRunner = function(testPath) {
@@ -473,6 +461,7 @@ function runTests(opts, cb) {
             YUI.applyConfig({
                 modules: testConfigs
             });
+
         } else {
             store = Store.createStore({
                 root: testPath,
@@ -481,10 +470,7 @@ function runTests(opts, cb) {
             });
 
             configureYUI(YUI, store);
-
-            if (testType === 'app') {
-                testConfigs = store.yui.getModulesConfig('server').modules;
-            }
+            testConfigs = store.yui.getModulesConfig('server').modules;
         }
 
 
@@ -504,44 +490,12 @@ function runTests(opts, cb) {
             }
         });
 
-        if (!testModuleNames.length) {
-            cb('No ' + testType + ' tests found in ' + path);
-        }
-
         global.YUITest = YUITest;
 
         // ensures all tests are run in the same order on any machine
         testModuleNames = testModuleNames.sort();
 
-        if (testType === 'app') {
-
-            // execute each test within new sandbox
-            testModuleNames.forEach(function(name) {
-                // only run tests, and not the frame mojit tests
-                if (RX_TESTS.test(name) && name !== 'HTMLFrameMojit-tests') {
-                    testQueue.push(name);
-                }
-            });
-
-            runNext = function() {
-                var cb = runNext,
-                    next = testQueue.pop();
-
-                // only run next if there is a next
-                if (testQueue.length === 0) {
-                    cb = null;
-                }
-                executeTestsWithinY([next, 'mojito-test'], cb);
-            };
-
-            if (testQueue.length) {
-                runNext();
-            }
-
-        } else {
-            executeTestsWithinY(testModuleNames);
-        }
-
+        executeTestsWithinY(testModuleNames);
     };
 
     if (coverage) {
@@ -557,9 +511,9 @@ function runTests(opts, cb) {
 function main(env, cb) {
     var type = env.args.shift() || 'app',
         dest = env.opts.directory || 'artifacts/test',
-        temp = env.opts.tmpdir || os.tmpdir(), // only used for coverage
+        temp = env.opts.tmpdir || getTmpDir(), // only used for coverage
         list = env.opts.testname, // array of optional test module names
-        source = env.args.shift() || '.';
+        source = env.args.shift() || env.cwd;
 
     if (!list) {
         // BC 3rd arg was comma separated list of test module names
@@ -573,11 +527,6 @@ function main(env, cb) {
     if (env.opts.loglevel) {
         log.level = env.opts.loglevel;
         log.silly('logging level set to', env.opts.loglevel);
-    }
-
-    if (!env.app) {
-        cb('Must run in an application directory.');
-        return;
     }
 
     if (!env.mojito) {
@@ -620,6 +569,7 @@ function main(env, cb) {
 
     Store = require(libpath.join(env.mojito.path, 'lib/store'));
     inputOptions = env.opts;
+    callback = cb;
 
     log.debug('type:', type);
     log.debug('test module list:', list);
@@ -631,7 +581,7 @@ function main(env, cb) {
         testlist: list,
         type: type,
         path: source
-    }, cb);
+    });
 }
 
 /**
@@ -644,20 +594,24 @@ YUITest.Assert.skip = function() {
 module.exports = main;
 
 module.exports.usage = usage = [
-    'Usage: mojito test [options] [type] [path]',
+    'Usage: mojito test [options] [app|mojit] [path]',
+    '',
     'Options:',
     '  -d --directory Specify a destination directory besides "artifacts/test"',
     '  -c --coverage  Instruments code under test and prints coverage report',
     '  -v --verbose   Verbose logging',
-    '     --debug     Same as --versbose',
-    '  -t --tempdir   Specify the temporary directory to use for coverage',
+    '     --debug     Same as --verbose',
+    '  -t --testname  name of a YUI module to restrict testing to. Repeatable.',
+    '     --tempdir   Specify the temporary directory to use for coverage',
+    '',
     'Examples:',
     '  To test a mojit:',
-    '    mojito test mojit ./path/to/mojit',
+    '    mojito test mojit path/to/mojit',
+    '',
     '  To test a Mojito app:',
-    '    mojito test app .',
+    '    mojito test app',
     ''
-].join('\n');
+].join(os.EOL);
 
 module.exports.options = [
     {shortName: 'c', hasValue: false, longName: 'coverage'},
