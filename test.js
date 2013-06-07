@@ -98,6 +98,11 @@ function configureYUI(YUI, store) {
     YUI.applyConfig(config);
 }
 
+function getTmpDir() {
+    // BC - os.tmpdir not implemented in SD's node 0.8 env?
+    return os.tmpdir ? os.tmpdir() : '/tmp';
+}
+
 function colorFactory(code) {
     function color(code, string) {
         return '\u001b[' + code + 'm' + string + '\u001b[0m';
@@ -506,7 +511,7 @@ function runTests(opts) {
 function main(env, cb) {
     var type = env.args.shift() || 'app',
         dest = env.opts.directory || 'artifacts/test',
-        temp = env.opts.tmpdir || os.tmpdir(), // only used for coverage
+        temp = env.opts.tmpdir || getTmpDir(), // only used for coverage
         list = env.opts.testname, // array of optional test module names
         source = env.args.shift() || env.cwd;
 
@@ -606,7 +611,7 @@ module.exports.usage = usage = [
     '  To test a Mojito app:',
     '    mojito test app',
     ''
-].join('\n');
+].join(os.EOL);
 
 module.exports.options = [
     {shortName: 'c', hasValue: false, longName: 'coverage'},
