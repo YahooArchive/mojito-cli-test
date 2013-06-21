@@ -306,7 +306,7 @@ function processResults() {
     }
 }
 
-function executeTestsWithinY(tests) {
+function executeTestsWithinY(tests, cb) {
 
     var YUIInst,
         suiteName = '';
@@ -333,7 +333,12 @@ function executeTestsWithinY(tests) {
             TestRunner.unsubscribe(TestRunner.COMPLETE_EVENT, handleEvent);
 
             collectRunResults(event.results);
-            processResults();
+
+            if (cb) {
+                cb();
+            } else {
+                processResults();
+            }
             break;
         }
     }
@@ -362,6 +367,14 @@ function executeTestsWithinY(tests) {
     ]});
 
     YUIInst.use.apply(YUIInst, tests);
+}
+
+function execTestQueueInY(queue) {
+    var modules = [queue.pop(), 'mojito', 'mojito-test'];
+
+    executeTestsWithinY(modules, queue.length && function execNext() {
+        execTestQueueInY(queue);
+    });
 }
 
 function instrumentDirectory(from, verbose, testType, cb) {
@@ -437,10 +450,9 @@ function runTests(opts) {
         coverage = inputOptions.coverage,
         verbose = inputOptions.verbose,
         store,
-        testRunner,
-        testModuleNames = ['mojito', 'mojito-test'];
+        testModuleNames = [];
 
-    testRunner = function(testPath) {
+    function testRunner(testPath) {
         var testConfigs,
             sourceConfigs;
 
@@ -473,11 +485,9 @@ function runTests(opts) {
             testConfigs = store.yui.getModulesConfig('server').modules;
         }
 
-
         Object.keys(testConfigs).forEach(function(name) {
             // if a test name filter is in effect, only run matching tests
             if (targetTests.length) {
-
                 for (i = 0; i < targetTests.length; i += 1) {
                     ttn = targetTests[i];
                     if (ttn === name || ttn + '-tests' === name) {
@@ -495,8 +505,12 @@ function runTests(opts) {
         // ensures all tests are run in the same order on any machine
         testModuleNames = testModuleNames.sort();
 
-        executeTestsWithinY(testModuleNames);
-    };
+        if (testType === 'app') {
+            execTestQueueInY(testModuleNames);
+        } else {
+            executeTestsWithinY(testModuleNames);
+        }
+    }
 
     if (coverage) {
         instrumentDirectory(path, verbose, testType, function() {
@@ -505,7 +519,6 @@ function runTests(opts) {
     } else {
         testRunner(path);
     }
-
 }
 
 function main(env, cb) {
