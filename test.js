@@ -500,6 +500,11 @@ function runTests(opts) {
             }
         });
 
+        if (!testModuleNames.length) {
+            callback('No ' + testType + ' tests found');
+            return;
+        }
+
         global.YUITest = YUITest;
 
         // ensures all tests are run in the same order on any machine
