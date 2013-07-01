@@ -395,6 +395,7 @@ function instrumentDirectory(from, verbose, testType, cb) {
     if (testType === 'app') { //copy everything to instrumented dir first
         allMatcher = utils.getExclusionMatcher([
             { pattern: /node_modules/, include: false },
+            { pattern: /\.git/, include: false },
             { pattern: /\.svn/, include: false },
             { pattern: /.*/, include: true }
         ], false);
