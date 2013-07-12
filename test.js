@@ -272,6 +272,7 @@ function processResults() {
             callback('Failed.', null);
         } else {
             callback(null, 'Passed.');
+            process.exit(0); // some tests may leave things running.
         }
     }
 
