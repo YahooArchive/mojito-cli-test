@@ -32,10 +32,9 @@ or:
 By default, the test results are written to both `stdout` and saved in a JUnitXML-formatted file at
 `artifacts/test/result.xml`. To specify a different destination, use the `--directory` option (see below).
 
-A particular test module (i.e., the YUI module name) can be specified as the last argument. Multiple module
-names can be separated with commas. For example:
+A particular test module (i.e., the YUI module name) can be specified with the `--testname` option. This option can be used multiple times. For example:
 
-    $ mojito test app --testname modelA-tests --testname moduleB-tests
+    $ mojito test app --testname mod-tests --testname mod-tests
 
 ### Options
 
