@@ -29,7 +29,7 @@ By default, the test results are displayed on stdout, and saved in a JUnitXML-fo
 
 A particular test-module (i.e. the YUI module name) can be specified as the last argument. Multiple module names can be separated with commas. For example:
 
-    % mojito test app --test modelA-tests --test moduleB-tests
+    % mojito test app --testname modelA-tests --testname moduleB-tests
 
 ### Options
 
