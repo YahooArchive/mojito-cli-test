@@ -59,14 +59,6 @@ To run only a specific test or tests (option can be used multiple times):
 
 Note, the YUI module name is the first parameter to YUI.add() in it's source definition.
 
-Run only the tests in the YUI module named "mod-a-tests":
-
-    $ mojito test app --testname mod-a-tests
-
-Run only the tests in the YUI modules named "mod-a-tests" and "mod-b-tests", in the mojit Foo:
-
-    $ mojito test mojit Foo --testname mod-a-tests --testname mod-b-tests
-
 To specify a temporary directory that will be used to copy instrumented code for code coverage, use the
 option below. By default, the system's default directory for temp files is used, as determined
 by [`os.tmpdir()`](http://nodejs.org/api/os.html#os_os_tmpdir).
