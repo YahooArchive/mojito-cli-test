@@ -32,9 +32,13 @@ or:
 By default, the test results are written to both `stdout` and saved in a JUnitXML-formatted file at
 `artifacts/test/result.xml`. To specify a different destination, use the `--directory` option (see below).
 
-A particular test module (i.e., the YUI module name) can be specified with the `--testname` option. This option can be used multiple times. For example:
+Run only the tests in the YUI module named "mod-a-tests":
 
-    $ mojito test app --testname mod-tests --testname mod-tests
+    $ mojito test app --testname mod-a-tests
+
+Run only the tests in the YUI modules named "mod-a-tests" and "mod-b-tests", in the mojit Foo:
+
+    $ mojito test mojit Foo --testname mod-a-tests --testname mod-b-tests
 
 ### Options
 
@@ -47,6 +51,21 @@ To specify a destination directory for the test results (default is `artifacts/t
 
     --directory <path>
     -d <path>
+
+To run only a specific test or tests (option can be used multiple times):
+
+    --testname <yui module name>
+    -t <yui module name>
+
+Note, the YUI module name is the first parameter to YUI.add() in it's source definition.
+
+Run only the tests in the YUI module named "mod-a-tests":
+
+    $ mojito test app --testname mod-a-tests
+
+Run only the tests in the YUI modules named "mod-a-tests" and "mod-b-tests", in the mojit Foo:
+
+    $ mojito test mojit Foo --testname mod-a-tests --testname mod-b-tests
 
 To specify a temporary directory that will be used to copy instrumented code for code coverage, use the
 option below. By default, the system's default directory for temp files is used, as determined
