@@ -7,12 +7,12 @@ Install `mojito-cli` and `mojito-cli-test` with the following: `npm install -g m
 Usage
 -----
 
-The `test` command uses [yuitest](https://github.com/yui/yuitest) to run unit tests in files ending in `-tests.js`, and whose YUI module name ends in `-test` or `-tests`.
-
-The command should be invoked at the top directory level of your mojito application, which should also have
+The command should be invoked at the top directory level of your Mojito application, which should also have
 `mojito` [installed locally](https://github.com/yahoo/mojito-cli/wiki/NpmInstallation).
 
     mojito test [options] <app|mojit> [path]
+
+`mojito test` uses [yuitest](https://github.com/yui/yuitest) to run unit tests in files ending in `-tests.js`, and whose YUI module name ends in `-test` or `-tests`.
 
 ### Examples
 
