@@ -33,7 +33,10 @@ var libpath = require('path'),
 
     Store, // = require(BASE + 'lib/store'),
 
-    RX_TESTS = /-tests$/,
+    // yui module names must match this regex to be considered a test (except
+    // if user specifies --testname, in which case only --testname modules run)
+    RX_TESTS = /-tests?$/,
+
     NO_TTY = !process.stdout.isTTY || !process.stderr.isTTY,
 
     /* jshint -W079*/// suppress lint "Redefinition of 'YUI'." on next line
@@ -625,10 +628,10 @@ module.exports.usage = usage = [
     '     --tempdir   Specify the temporary directory to use for coverage',
     '',
     'Examples:',
-    '  To test a mojit:',
+    '  To run tests for a mojit:',
     '    mojito test mojit path/to/mojit',
     '',
-    '  To test a Mojito app:',
+    '  To run tests for a Mojito app:',
     '    mojito test app',
     ''
 ].join(os.EOL);
