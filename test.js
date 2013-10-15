@@ -156,6 +156,10 @@ function consoleTestReport(results, allFailures) {
                 msg = '✔  passed';
                 passedCnt += 1;
             }
+        } else if (test.result === 'ignore') {
+            formatter = f.yellow;
+            msg = '⚑ deferred';
+            deferredCnt += 1;
         } else {
             formatter = f.red;
             msg = '✖  FAILED';
