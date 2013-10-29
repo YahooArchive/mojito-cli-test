@@ -12,7 +12,7 @@ The command should be invoked at the top directory level of your Mojito applicat
 
     mojito test [options] <app|mojit> [path]
 
-`mojito test` uses [yuitest](https://github.com/yui/yuitest) to run unit tests in files ending in `-tests.js`, and whose YUI module name ends in `-test` or `-tests`.
+`mojito test` uses [yuitest](https://github.com/yui/yuitest) to run unit tests in files ending in `-tests.js`, and whose YUI module name ends in `-tests`.
 
 ### Examples
 
