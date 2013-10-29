@@ -35,7 +35,7 @@ var libpath = require('path'),
 
     // yui module names must match this regex to be considered a test (except
     // if user specifies --testname, in which case only --testname modules run)
-    RX_TESTS = /-tests?$/,
+    RX_TESTS = /-tests$/,
 
     NO_TTY = !process.stdout.isTTY || !process.stderr.isTTY,
 
