@@ -37,6 +37,9 @@ var libpath = require('path'),
     // if user specifies --testname, in which case only --testname modules run)
     RX_TESTS = /-tests$/,
 
+    // if a test case name matches this regex, mark it "deferred"
+    RX_DEFER = /^(todo|skip|ignore)\b/i,
+
     NO_TTY = !process.stdout.isTTY || !process.stderr.isTTY,
 
     /* jshint -W079*/// suppress lint "Redefinition of 'YUI'." on next line
@@ -146,21 +149,23 @@ function consoleTestReport(results, allFailures) {
 
     function printTestResults(test, suiteName, caseName) {
         totalCnt += 1;
-        if (test.result === 'pass') {
-            if (test.name.indexOf('TODO') > -1) {
-                formatter = f.yellow;
-                msg = '⚑ deferred';
-                deferredCnt += 1;
-            } else {
-                formatter = f.green;
-                msg = '✔  passed';
-                passedCnt += 1;
-            }
+
+        if ((test.result === 'ignore') || test.name.match(RX_DEFER)) {
+            formatter = f.yellow;
+            msg = '⚑ deferred';
+            deferredCnt += 1;
+
+        } else if (test.result === 'pass') {
+            formatter = f.green;
+            msg = '✔  passed';
+            passedCnt += 1;
+
         } else {
             formatter = f.red;
             msg = '✖  FAILED';
             failedCnt += 1;
         }
+
         console.log(formatter(msg + '\t' + suiteName + ' :: ' + caseName +
             ' :: ' + test.name));
     }
