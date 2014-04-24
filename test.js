@@ -488,7 +488,12 @@ function runTests(opts) {
             store = Store.createStore({
                 root: testPath,
                 context: {},
-                appConfig: { env: 'test', resourceStore: { lazyMojits: false } }
+                appConfig: { env: 'test',
+                    resourceStore: {
+                        lazyLangs: false,
+                        lazyMojits: false
+                    }
+                }
             });
 
             configureYUI(YUI, store);
